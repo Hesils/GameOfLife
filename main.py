@@ -22,13 +22,13 @@ class MainFrame(tk.Tk):
         self.entrydensity = tk.Entry(self)
         self.entrydensity.insert(tk.END, "30")
         self.entrydensity.grid(row=3, column=0)
-        labelgeneration = tk.Label(self, text="Nombre de generatoion:", font=("Arial", 9))
+        labelgeneration = tk.Label(self, text="Nombre de generation:", font=("Arial", 9))
         labelgeneration.grid(row=4, column=0)
+        self.labelcountgen = tk.Label(self, text="Generation 0", font=("Arial", 9))
+        self.labelcountgen.grid(row=0, column=1)
         self.entrygeneration = tk.Entry(self)
         self.entrygeneration.insert(tk.END, "100")
         self.entrygeneration.grid(row=5, column=0)
-        btnreset = tk.Button(self, text="Generer", command=self.reset)
-        btnreset.grid(row=6, column=0)
         """Graphique data"""
         self.graphiquematrice = tk.Canvas(self, height=740, width=1000, bg='white')
         self.graphiquematrice.bind('<MouseWheel>', self.zoomwithmousewheel)
@@ -47,7 +47,7 @@ class MainFrame(tk.Tk):
         self.dimention = [70, 100]
         self.matrice = []
         self.cellids = []
-        self.graphiquematrice.grid(row=0, column=1, rowspan=10)
+        self.graphiquematrice.grid(row=1, column=1, rowspan=10)
         self.density = int(self.entrydensity.get())
         for line in range(self.dimention[0]):
             self.matrice.append([])
@@ -63,21 +63,22 @@ class MainFrame(tk.Tk):
                 self.graphiquematrice.tag_bind(self.cellids[line][col], '<Button-1>', partial(self.changestateonclick, self.cellids[line][col]))
 
     def reset(self):
-        """
-        for one in self.labels:
-            for cell in one:
-                cell.delete()
-        """
         self.initmatrice()
         os.system('cls')
         self.printmatrice()
+
+    def clearmatrice(self):
+        for line in range(self.dimention[0]):
+            for col in range(self.dimention[1]):
+                self.graphiquematrice.itemconfig(self.cellids[line][col], fill='white')
     """Calcul Next generation"""
     def launchetime(self):
         self.generation = int(self.entrygeneration.get())
         for i in range(self.generation):
-            os.system('cls')
-            print("Generation " + str(i))
-            self.printmatrice()
+            #os.system('cls')
+            #print("Generation " + str(i))
+            #self.printmatrice()
+            self.labelcountgen.config(text="Generation " + str(i + 1))
             self.nextmatricestate()
             self.update()
             #time.sleep(0.1)
@@ -126,9 +127,9 @@ class MainFrame(tk.Tk):
             for cell in line:
                 newmatrice[coord[0]].append(self.nextcellstate(coord))
                 if newmatrice[coord[0]][coord[1]] == 0:
-                    pass
+                    self.graphiquematrice.itemconfig(self.cellids[coord[0]][coord[1]], fill='white')
                 else:
-                    pass
+                    self.graphiquematrice.itemconfig(self.cellids[coord[0]][coord[1]], fill='green')
                 coord[1] += 1
             coord[0] += 1
         self.matrice = newmatrice
@@ -149,7 +150,7 @@ class MainFrame(tk.Tk):
             self.graphiquematrice.itemconfig(idcell, fill='white')
 
     def zoomwithmousewheel(self, event):
-        if event.delta == 120:
+        if event.delta > 0:
             self.scale += 1
         else:
             self.scale -= 1
