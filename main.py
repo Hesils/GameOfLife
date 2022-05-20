@@ -3,14 +3,15 @@ import time
 import threading
 import random
 import os
+from functools import partial
 
 
 class MainFrame(tk.Tk):
     def __init__(self):
         tk.Tk.__init__(self)
-        x_coord = int(self.winfo_screenwidth() / 2) - 100
-        y_coord = int(self.winfo_screenheight() / 2 - 200)
-        self.geometry("{}x{}+{}+{}".format(200, 400, x_coord, y_coord))
+        x_coord = int(self.winfo_screenwidth() / 2) - 600
+        y_coord = int(self.winfo_screenheight() / 2 - 390)
+        self.geometry("{}x{}+{}+{}".format(1200, 750, x_coord, y_coord))
         """Graphique elements"""
         btnnextgen = tk.Button(self, text="Next Generation", command=self.nextmatricestate)
         btnnextgen.grid(row=0, column=0)
@@ -29,32 +30,37 @@ class MainFrame(tk.Tk):
         btnreset = tk.Button(self, text="Generer", command=self.reset)
         btnreset.grid(row=6, column=0)
         """Graphique data"""
-        self.labels = []
-        self.windimention = [950, 630]
+        self.graphiquematrice = tk.Canvas(self, height=740, width=1000, bg='white')
+        self.graphiquematrice.bind('<MouseWheel>', self.zoomwithmousewheel)
+        self.windimention = [1200, 750]
         self.generation = 100
         """Matrice"""
         self.matrice = []
+        self.cellids = []
         self.dimention = [0, 0]
         self.density = 66
+        self.scale = 10
         self.initmatrice()
 
     """Init Methodes"""
     def initmatrice(self):
-        self.dimention = [40, 80]
+        self.dimention = [70, 100]
         self.matrice = []
-        self.labels = []
+        self.cellids = []
+        self.graphiquematrice.grid(row=0, column=1, rowspan=10)
         self.density = int(self.entrydensity.get())
         for line in range(self.dimention[0]):
             self.matrice.append([])
-            self.labels.append([])
+            self.cellids.append([])
             for col in range(self.dimention[1]):
                 chance = random.randrange(1, 100, 1)
                 if chance <= self.density:
                     self.matrice[line].append(1)
-                    #self.labels[line].append(tk.Label(self, text="X", font=("Arial", 10), bg='grey'))
+                    self.cellids[line].append(self.graphiquematrice.create_rectangle(col*self.scale, line*self.scale, (col+1)*self.scale, (line+1)*self.scale, outline='black', fill='green'))
                 else:
                     self.matrice[line].append(0)
-                    #self.labels[line].append(tk.Label(self, text="O", font=("Arial", 10), bg='green'))
+                    self.cellids[line].append(self.graphiquematrice.create_rectangle(col*self.scale, line*self.scale, (col+1)*self.scale, (line+1)*self.scale, outline='black', fill='white'))
+                self.graphiquematrice.tag_bind(self.cellids[line][col], '<Button-1>', partial(self.changestateonclick, self.cellids[line][col]))
 
     def reset(self):
         """
@@ -119,12 +125,10 @@ class MainFrame(tk.Tk):
             newmatrice.append([])
             for cell in line:
                 newmatrice[coord[0]].append(self.nextcellstate(coord))
-                """
                 if newmatrice[coord[0]][coord[1]] == 0:
-                    self.labels[coord[0]][coord[1]].config(text="O", bg='grey')
+                    pass
                 else:
-                    self.labels[coord[0]][coord[1]].config(text="X", bg='green')
-                """
+                    pass
                 coord[1] += 1
             coord[0] += 1
         self.matrice = newmatrice
@@ -136,17 +140,22 @@ class MainFrame(tk.Tk):
                 text += ("X" if cell == 1 else " ") + " "
             print(text)
         i = 1
-        for line in self.labels:
-            j = 1
-            for cell in line:
-                cell.grid(row=i, column=j)
-                j += 1
-            i += 1
+    """Binding Methodes"""
+    def changestateonclick(self, idcell, event):
+        color = self.graphiquematrice.itemcget(idcell, 'fill')
+        if color == 'white':
+            self.graphiquematrice.itemconfig(idcell, fill='green')
+        else:
+            self.graphiquematrice.itemconfig(idcell, fill='white')
 
-    def hidematrice(self):
-        for one in self.labels:
-            for cell in one:
-                cell.place_forget()
+    def zoomwithmousewheel(self, event):
+        if event.delta == 120:
+            self.scale += 1
+        else:
+            self.scale -= 1
+        for line in range(self.dimention[0]):
+            for col in range(self.dimention[1]):
+                self.graphiquematrice.coords(self.cellids[line][col], col*self.scale, line*self.scale, (col+1)*self.scale, (line+1)*self.scale)
 
 
 if __name__ == '__main__':
